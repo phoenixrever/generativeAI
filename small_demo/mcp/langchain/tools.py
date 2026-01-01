@@ -1,22 +1,3 @@
-# main.py
-from mcp.server.fastmcp import FastMCP
-import tools
-
-mcp = FastMCP("host info mcp")
-mcp.add_tool(tools.get_host_info)
-
-@mcp.tool()
-def foo():
-    return ""
-
-def main():
-    mcp.run("stdio") # sse
-
-
-if __name__ == "__main__":
-    main()
-
-    
 # tools.py
 import platform
 import psutil
@@ -24,9 +5,10 @@ import subprocess
 import json
 
 def get_host_info() -> str:
-    """get host information
+    """Get basic host system information.
+
     Returns:
-        str: the host information in JSON string
+        str: A JSON string containing system information. 
     """
     info: dict[str, str] = {
         "system": platform.system(),

@@ -10,10 +10,12 @@ ollama run qwen2.5-coder:7b
 """
 
 # 核心变化：导入 Ollama 驱动
+import inspect
 from langchain_ollama import ChatOllama
 from langchain_core.messages import HumanMessage
 from langchain.agents import create_agent
 from langgraph.checkpoint.memory import MemorySaver
+from langchain_core.tools import BaseTool
 
 # 导入当前文件夹下的 tools 模块
 import tools
@@ -30,7 +32,13 @@ def chat_loop():
     )
 
     # 2. 组装工具
-    langchain_tools = [tools.read_file, tools.list_files, tools.rename_file]
+    # langchain_tools = [tools.read_file, tools.list_files, tools.rename_file,tools.write_file]
+    
+    # 这一行会自动抓取 tools.py 里所有带 @tool 的函数
+    langchain_tools = [
+        # 结果层 (Output)：obj 数据源层 (Source)：for name, obj in inspect.getmembers(tools)  过滤器层 (Filter)：if isinstance(obj, BaseTool)
+        obj for name, obj in inspect.getmembers(tools) if isinstance(obj, BaseTool)
+    ]
 
     # 3. 设置记忆
     memory = MemorySaver()

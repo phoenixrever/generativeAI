@@ -1,4 +1,5 @@
 #### tools.py
+from langchain_core.tools import tool
 from pathlib import Path
 import os
 
@@ -15,6 +16,7 @@ base_dir = parent_dir / "test"
 
 # Function must have a docstring if description not provided. langchain必须有docstring才能识别工具
 
+@tool
 def read_file(name: str) -> str:
     """Return file content. If not exist, return error message.
     """
@@ -26,6 +28,7 @@ def read_file(name: str) -> str:
     except Exception as e:
         return f"An error occurred: {e}"
 
+@tool
 def list_files() -> list[str]:
     """Return all file names under base_dir (recursively).
     """
@@ -39,6 +42,7 @@ def list_files() -> list[str]:
             file_list.append(str(item.relative_to(base_dir))) 
     return file_list
 
+@tool
 def rename_file(name: str, new_name: str) -> str:
     """Rename a file from name to new_name under base_dir."""
     print(f"(rename_file {name} -> {new_name})")
@@ -50,5 +54,21 @@ def rename_file(name: str, new_name: str) -> str:
         os.makedirs(new_path.parent, exist_ok=True)
         os.rename(base_dir / name, new_path)
         return f"File '{name}' successfully renamed to '{new_name}'."
+    except Exception as e:
+        return f"An error occurred: {e}"
+
+@tool
+def write_file(name: str, content: str) -> str:
+    """Write content to a file named name under base_dir."""
+    print(f"(write_file {name})")
+    try:
+        file_path = base_dir / name
+        if not str(file_path).startswith(str(base_dir)):
+            return "Error: name is outside base_dir."
+
+        os.makedirs(file_path.parent, exist_ok=True)
+        with open(file_path, "w") as f:
+            f.write(content)
+        return f"Content successfully written to '{name}'."
     except Exception as e:
         return f"An error occurred: {e}"
