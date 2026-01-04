@@ -10,10 +10,10 @@ import tempfile
 from pathlib import Path
 import json
 
-from config import AppConfig, get_config
-from document_processor import Document, TextDocumentProcessor, TextSplitter
-from vector_store import VectorStore
-from rag_engine import OllamaClient, RAGEngine
+from realworld.src.config import AppConfig, get_config
+from realworld.src.document_processor import Document, TextDocumentProcessor, TextSplitter
+from realworld.src.vector_store import VectorStore
+from realworld.src.rag_engine import OllamaClient, RAGEngine
 
 class TestConfig(unittest.TestCase):
     """配置模块测试"""
@@ -93,9 +93,8 @@ class TestVectorStore(unittest.TestCase):
             Document("深度学习是机器学习的一种方法。", {"source": "test2"})
         ]
 
-        # 添加文档（这里需要模拟嵌入向量）
-        for doc in docs:
-            doc.metadata['embedding'] = [0.1, 0.2, 0.3]  # 模拟嵌入向量
+        # 注意：这里不再在 metadata 中添加嵌入向量
+        # 嵌入向量应该由外部的嵌入模型生成并作为参数传递
 
         added = self.store.add_documents(docs)
         self.assertEqual(added, 2)
@@ -111,13 +110,21 @@ class TestOllamaClient(unittest.TestCase):
         """测试前准备"""
         self.client = OllamaClient("http://invalid-url:11434")  # 使用无效URL进行测试
 
+    def test_online_embedder_creation(self):
+        """测试线上嵌入器创建"""
+        from src.embedders import create_embedder
+
+        # 测试创建失败（依赖未安装）
+        with self.assertRaises(ImportError):
+            create_embedder("online", api_key="fake_key")
+
     @patch('requests.post')
     def test_generate_embedding_error(self, mock_post):
         """测试嵌入生成错误处理"""
         mock_post.side_effect = Exception("Connection failed")
 
         with self.assertRaises(Exception):
-            self.client.generate_embedding("test text", "test-model")
+            self.client.generate_embedding("test text")
 
     @patch('requests.post')
     def test_generate_text_success(self, mock_post):

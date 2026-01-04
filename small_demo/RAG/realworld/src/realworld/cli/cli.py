@@ -12,9 +12,9 @@ from pathlib import Path
 from typing import List, Optional
 import logging
 
-from config import get_config, init_config
-from rag_engine import create_rag_engine, RAGEngine
-import logger
+from ..config import get_config, init_config
+from ..rag_engine import create_rag_engine, RAGEngine
+from ..logger import get_logger
 
 class RAGCLI:
     """RAG 命令行接口"""
@@ -82,9 +82,10 @@ class RAGCLI:
                     print(f"\n📚 参考文档 ({len(result['retrieved_documents'])} 个):")
                     for i, doc in enumerate(result['retrieved_documents'], 1):
                         print(f"\n{i}. 来源: {doc['source'] or '未知'}")
-                        print(".3f"                        print(f"   内容: {doc['content'][:200]}...")
+                        print(f"   相似度: {doc['score']:.3f}")
+                        print(f"   内容: {doc['content'][:200]}...")
 
-                print(".2f"
+                print(f"\n⏱️  查询耗时: {result['query_time']:.2f} 秒")
         except Exception as e:
             self.logger.error(f"查询失败: {e}")
             print(f"❌ 查询失败: {e}")
@@ -263,7 +264,7 @@ def main():
         print("\n⚠️  操作被用户中断")
         sys.exit(1)
     except Exception as e:
-        logger.get_logger(__name__).error(f"未预期的错误: {e}")
+        get_logger(__name__).error(f"未预期的错误: {e}")
         print(f"❌ 发生未预期的错误: {e}")
         sys.exit(1)
 

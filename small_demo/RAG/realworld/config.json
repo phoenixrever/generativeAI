@@ -1,0 +1,15 @@
+{
+  "ollama": {
+    "base_url": "http://localhost:11434",
+    "embedding_model": "bge-m3",
+    "generation_model": "qwen2.5:7b"
+  },
+  "vector_store": {
+    "persist_directory": "./db/chroma",
+    "collection_name": "documents"
+  },
+  "logging": {
+    "level": "INFO",
+    "file_path": "logs/rag_app.log"
+  }
+}

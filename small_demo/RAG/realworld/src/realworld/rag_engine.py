@@ -10,65 +10,57 @@ from typing import List, Dict, Any, Optional, Tuple
 import logging
 import requests
 from retry import retry
-
-from config import get_config
-from document_processor import Document, DocumentLoader, TextSplitter, create_document_loader, create_text_splitter
-from vector_store import VectorStore, EmbeddingCache, create_vector_store, create_embedding_cache
-import logger
+from pathlib import Path
+from .config import get_config
+from .document_processor import Document, DocumentLoader, TextSplitter, create_document_loader, create_text_splitter
+from .vector_store import VectorStore, EmbeddingCache, create_vector_store, create_embedding_cache
+from .embedders import Embedder, create_embedder
+from logger import get_logger
 
 class OllamaClient:
     """Ollama API 客户端"""
 
-    def __init__(self, base_url: str = "http://localhost:11434", timeout: int = 60):
+    def __init__(
+        self,
+        base_url: str = "http://localhost:11434",
+        timeout: int = 60,
+        embedder: Optional[Embedder] = None
+    ):
         """
         初始化 Ollama 客户端
 
         参数:
             base_url: Ollama 服务地址
             timeout: 请求超时时间
+            embedder: 嵌入器实例（可选，默认使用 OllamaDirectEmbedder）
         """
         self.base_url = base_url.rstrip('/')
         self.timeout = timeout
-        self.logger = logging.getLogger(__name__)
+        self.logger = get_logger(__name__)  # __name__ 用于获取当前模块的名称
 
-    @retry(exceptions=(requests.RequestException, ConnectionError), tries=3, delay=1, backoff=2)
-    def generate_embedding(self, text: str, model: str) -> List[float]:
+        # 初始化嵌入器
+        if embedder is None:
+            # 默认使用直接 API 调用
+            self.embedder = create_embedder(
+                "ollama_direct",
+                base_url=self.base_url,
+                timeout=self.timeout
+            )
+        else:
+            self.embedder = embedder
+
+    def generate_embedding(self, text: str, model: str = None) -> List[float]:
         """
         生成文本嵌入向量
 
         参数:
             text: 输入文本
-            model: 嵌入模型名称
+            model: 嵌入模型名称（某些嵌入器可能不需要）
 
         返回:
             嵌入向量
         """
-        try:
-            response = requests.post(
-                f"{self.base_url}/api/embeddings",
-                json={
-                    "model": model,
-                    "prompt": text
-                },
-                timeout=self.timeout
-            )
-            response.raise_for_status()
-
-            data = response.json()
-            embedding = data.get("embedding")
-
-            if not embedding:
-                raise ValueError("响应中没有嵌入向量")
-
-            self.logger.debug(f"生成嵌入向量成功，维度: {len(embedding)}")
-            return embedding
-
-        except requests.RequestException as e:
-            self.logger.error(f"Ollama API 请求失败: {e}")
-            raise
-        except Exception as e:
-            self.logger.error(f"生成嵌入向量失败: {e}")
-            raise
+        return self.embedder.generate_embedding(text)
 
     @retry(exceptions=(requests.RequestException, ConnectionError), tries=3, delay=1, backoff=2)
     def generate_text(self, prompt: str, model: str, stream: bool = False, **kwargs) -> str:
@@ -141,7 +133,9 @@ class RAGEngine:
         self,
         ollama_client: Optional[OllamaClient] = None,
         vector_store: Optional[VectorStore] = None,
-        embedding_cache: Optional[EmbeddingCache] = None
+        embedding_cache: Optional[EmbeddingCache] = None,
+        embedder_type: str = "ollama_direct",
+        embedder_kwargs: Optional[Dict[str, Any]] = None
     ):
         """
         初始化 RAG 引擎
@@ -150,16 +144,31 @@ class RAGEngine:
             ollama_client: Ollama 客户端实例
             vector_store: 向量存储实例
             embedding_cache: 嵌入缓存实例
+            embedder_type: 嵌入器类型 ('ollama_direct', 'ollama_langchain', 'online')
+            embedder_kwargs: 嵌入器初始化参数
         """
         self.config = get_config()
-        self.logger = logging.getLogger(__name__)
+        self.logger = get_logger(__name__)
 
         # 初始化组件
-        self.ollama = ollama_client or OllamaClient(
-            base_url=self.config.ollama.base_url,
-            timeout=self.config.ollama.request_timeout
-        )
+        if ollama_client is None:
+            # 创建嵌入器
+            embedder_kwargs = embedder_kwargs or {}
+            if embedder_type.startswith("ollama"):
+                # Ollama 相关嵌入器使用配置中的参数
+                embedder_kwargs.setdefault("base_url", self.config.ollama.base_url)
+                if embedder_type == "ollama_direct":
+                    embedder_kwargs.setdefault("timeout", self.config.ollama.request_timeout)
+                    embedder_kwargs.setdefault("model", self.config.ollama.embedding_model)
 
+            embedder = create_embedder(embedder_type, **embedder_kwargs)
+            ollama_client = OllamaClient(
+                base_url=self.config.ollama.base_url,
+                timeout=self.config.ollama.request_timeout,
+                embedder=embedder
+            )
+
+        self.ollama = ollama_client
         self.vector_store = vector_store or create_vector_store()
         self.embedding_cache = embedding_cache or create_embedding_cache()
 
@@ -167,7 +176,7 @@ class RAGEngine:
         self.document_loader = create_document_loader()
         self.text_splitter = create_text_splitter()
 
-        self.logger.info("RAG 引擎初始化完成")
+        self.logger.info(f"RAG 引擎初始化完成，使用嵌入器类型: {embedder_type}")
 
     def add_documents(self, file_paths: List[str], recursive: bool = True) -> int:
         """
@@ -224,10 +233,7 @@ class RAGEngine:
 
             # 生成新的嵌入向量
             try:
-                embedding = self.ollama.generate_embedding(
-                    doc.content,
-                    self.config.ollama.embedding_model
-                )
+                embedding = self.ollama.generate_embedding(doc.content)
 
                 # 缓存嵌入向量
                 if self.config.cache.enabled:
@@ -244,7 +250,7 @@ class RAGEngine:
         added_count = self.vector_store.add_documents(embedded_documents)
 
         elapsed_time = time.time() - start_time
-        self.logger.info(".2f"
+        self.logger.info(f"文档添加完成，耗时: {elapsed_time:.2f} 秒")
         return added_count
 
     def search_documents(self, query: str, n_results: int = 5, **filters) -> List[Tuple[Document, float]]:
@@ -263,10 +269,7 @@ class RAGEngine:
         self.logger.info(f"开始搜索: {query}")
 
         # 生成查询嵌入向量
-        query_embedding = self.ollama.generate_embedding(
-            query,
-            self.config.ollama.embedding_model
-        )
+        query_embedding = self.ollama.generate_embedding(query)
 
         # 搜索相似文档
         results = self.vector_store.search_similar(
@@ -294,7 +297,7 @@ class RAGEngine:
                 documents.append((doc, similarity_score))
 
         elapsed_time = time.time() - start_time
-        self.logger.info(".2f"
+        self.logger.info(f"文档搜索完成，耗时: {elapsed_time:.2f} 秒")
         return documents
 
     def generate_answer(
@@ -356,7 +359,7 @@ class RAGEngine:
             )
 
             elapsed_time = time.time() - start_time
-            self.logger.info(".2f"
+            self.logger.info(f"回答生成完成，耗时: {elapsed_time:.2f} 秒")
             return answer
 
         except Exception as e:
@@ -445,6 +448,18 @@ class RAGEngine:
             "vector_store_info": self.vector_store.get_collection_info()
         }
 
-def create_rag_engine() -> RAGEngine:
-    """创建配置的 RAG 引擎实例"""
-    return RAGEngine()
+def create_rag_engine(
+    embedder_type: str = "ollama_direct",
+    embedder_kwargs: Optional[Dict[str, Any]] = None
+) -> RAGEngine:
+    """
+    创建配置的 RAG 引擎实例
+
+    参数:
+        embedder_type: 嵌入器类型 ('ollama_direct', 'ollama_langchain', 'online')
+        embedder_kwargs: 嵌入器初始化参数
+
+    返回:
+        RAG 引擎实例
+    """
+    return RAGEngine(embedder_type=embedder_type, embedder_kwargs=embedder_kwargs)

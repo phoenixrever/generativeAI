@@ -15,9 +15,9 @@ import logging
 import chromadb
 from chromadb.config import Settings
 
-from config import get_config
-from document_processor import Document
-import logger
+from .config import get_config
+from .document_processor import Document
+from . import logger
 
 class VectorStore:
     """向量存储管理器"""

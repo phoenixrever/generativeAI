@@ -16,13 +16,8 @@ python cli.py query "您的问题"   # 查询
 import sys
 from pathlib import Path
 
-# 添加当前目录到 Python 路径
-current_dir = Path(__file__).parent
-sys.path.insert(0, str(current_dir))
-
-from config import init_config
-from rag_engine import create_rag_engine
-import logger
+from ..config import init_config
+from ..rag_engine import create_rag_engine
 
 def main():
     """主函数 - 演示 RAG 系统的基本用法"""
@@ -57,7 +52,7 @@ def main():
 
     print(f"问题: {result['question']}")
     print(f"回答: {result['answer']}")
-    print(".2f"
+    print(f"响应时间: {result['response_time']:.2f}")
 if __name__ == '__main__':
     try:
         main()

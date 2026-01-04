@@ -1,0 +1,417 @@
+Metadata-Version: 2.4
+Name: realworld
+Version: 1.0.0
+Summary: 一个完整的检索增强生成系统，支持多种嵌入方式和向量存储
+Author-email: phoenixrever <phoenixrever@example.com>
+Maintainer-email: phoenixrever <phoenixrever@example.com>
+License: MIT
+Project-URL: Homepage, https://github.com/phoenixrever/generativeAI
+Project-URL: Repository, https://github.com/phoenixrever/generativeAI
+Project-URL: Issues, https://github.com/phoenixrever/generativeAI/issues
+Keywords: RAG,AI,embeddings,vector-search,ollama
+Classifier: Development Status :: 4 - Beta
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Classifier: Topic :: Scientific/Engineering :: Artificial Intelligence
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+Requires-Dist: chromadb>=0.4.0
+Requires-Dist: requests>=2.25.0
+Requires-Dist: PyPDF2>=3.0.0
+Requires-Dist: python-docx>=0.8.0
+Requires-Dist: retry>=0.9.0
+Provides-Extra: langchain
+Requires-Dist: langchain-ollama>=0.1.0; extra == "langchain"
+Provides-Extra: gemini
+Requires-Dist: google-generativeai>=0.3.0; extra == "gemini"
+Provides-Extra: dev
+Requires-Dist: pytest>=7.0.0; extra == "dev"
+Requires-Dist: pytest-cov>=4.0.0; extra == "dev"
+Requires-Dist: black>=23.0.0; extra == "dev"
+Requires-Dist: isort>=5.12.0; extra == "dev"
+Requires-Dist: flake8>=6.0.0; extra == "dev"
+Requires-Dist: mypy>=1.0.0; extra == "dev"
+Provides-Extra: all
+Requires-Dist: realworld[dev,gemini,langchain]; extra == "all"
+
+# 企业级 RAG 系统 (Enterprise RAG System)
+
+一个完整的企业级检索增强生成 (RAG) 系统，使用本地 Ollama 服务构建。支持多种文档格式、向量搜索、缓存机制和命令行操作。
+
+## 🚀 核心特性
+
+- **多格式文档支持**: TXT, MD, PDF, DOCX
+- **本地 LLM 集成**: 使用 Ollama 支持多种开源模型
+- **高效向量搜索**: ChromaDB 提供快速相似度检索
+- **智能文本分割**: 支持重叠分块和元数据保留
+- **缓存机制**: 嵌入向量缓存提升性能
+- **命令行工具**: 完整的 CLI 接口
+- **配置管理**: 灵活的配置系统
+- **日志记录**: 结构化日志和错误处理
+- **单元测试**: 完整的测试覆盖
+
+## 📁 项目结构
+
+```
+realworld/
+├── src/                    # 核心模块
+│   ├── __init__.py
+│   ├── rag_engine.py      # RAG 引擎核心
+│   ├── embedders.py       # 嵌入器接口和实现
+│   ├── vector_store.py    # 向量存储管理
+│   ├── document_processor.py  # 文档处理
+│   ├── config.py          # 配置管理
+│   └── logger.py          # 日志配置
+├── cli/                   # 命令行接口
+│   ├── __init__.py
+│   ├── cli.py            # CLI 实现
+│   └── main.py           # 主入口
+├── data/                  # 数据存储
+│   ├── __init__.py
+│   ├── documents/        # 示例文档
+│   └── db/               # 向量数据库
+├── examples/             # 示例脚本
+│   ├── __init__.py
+│   ├── demo_embedders.py         # 嵌入器演示
+│   ├── demo_embedding_modes.py   # 嵌入模式演示
+│   └── gemini_example.py         # Gemini 使用示例
+├── docs/                 # 文档
+│   ├── __init__.py
+│   ├── README.md         # 项目文档
+│   └── config相关解读.md  # 配置说明
+├── tests/                # 测试
+│   └── test_rag.py       # 单元测试
+├── config.json           # 配置文件
+├── logs/                 # 日志文件
+├── cache/                # 缓存文件
+├── pyproject.toml        # 项目配置和依赖管理 (PEP 621)
+├── requirements.txt      # 传统依赖文件 (向后兼容)
+└── __init__.py          # 包初始化
+```
+
+## 🧠 嵌入器架构
+
+本项目实现了灵活的嵌入器架构，支持多种嵌入生成方式，便于在不同场景下切换和扩展。
+
+### 核心组件
+
+1. **`Embedder` 抽象基类** (`embedders.py`)
+
+   - 定义统一的嵌入器接口
+   - 包含 `generate_embedding()` 和 `generate_embeddings()` 方法
+
+2. **具体实现类**
+   - `OllamaDirectEmbedder`: 直接调用 Ollama API
+   - `OllamaLangchainEmbedder`: 使用 LangChain OllamaEmbeddings
+   - `OnlineModelEmbedder`: 线上大模型 (待实现)
+
+### 嵌入器对比
+
+| 嵌入器类型         | 优点                         | 缺点                              | 适用场景             |
+| ------------------ | ---------------------------- | --------------------------------- | -------------------- |
+| `ollama_direct`    | 轻量、无依赖、直接控制       | 需要手动处理错误重试              | 本地部署、简单场景   |
+| `ollama_langchain` | 批量处理高效、功能丰富       | 需要额外依赖                      | 高性能需求、复杂应用 |
+| `online`           | 云端服务、易扩展、高质量嵌入 | 网络依赖、API 费用、需要 API 密钥 | 云端部署、商业应用   |
+
+### 使用方法
+
+```python
+from rag_engine import RAGEngine
+
+# 使用直接嵌入器 (默认)
+engine = RAGEngine(embedder_type="ollama_direct")
+
+# 使用 LangChain 嵌入器 (推荐)
+engine = RAGEngine(embedder_type="ollama_langchain")
+
+# 使用 Gemini 嵌入器
+engine = RAGEngine(
+    embedder_type="online",
+    embedder_kwargs={"api_key": "your_gemini_api_key"}
+)
+```
+
+### 扩展新嵌入器
+
+要添加新的嵌入器实现：
+
+1. 继承 `Embedder` 抽象基类
+2. 实现 `generate_embedding()` 和 `generate_embeddings()` 方法
+3. 实现 `check_health()` 方法
+4. 在 `create_embedder()` 函数中添加新的类型处理
+
+## � 依赖管理
+
+本项目使用现代的 `pyproject.toml` (PEP 621) 进行依赖管理和项目配置，同时保留 `requirements.txt` 以确保向后兼容。
+
+### 主要依赖
+
+- **chromadb**: 向量数据库，用于文档嵌入存储和相似度搜索
+- **requests**: HTTP 客户端，用于与 Ollama API 通信
+- **PyPDF2**: PDF 文档处理
+- **python-docx**: Word 文档处理
+- **retry**: 网络请求重试机制
+
+### 可选依赖
+
+- **langchain-ollama**: LangChain Ollama 集成 (安装 `pip install -e .[langchain]`)
+- **google-generativeai**: Google Gemini API 集成 (安装 `pip install -e .[gemini]`)
+
+## �📋 系统要求
+
+- Python 3.8+
+- Ollama (已安装并运行)
+- 磁盘空间: 至少 2GB (用于模型和向量存储)
+
+## 🛠️ 安装步骤
+
+### 1. 安装 Ollama
+
+```bash
+# 下载并安装 Ollama
+curl -fsSL https://ollama.ai/install.sh | sh
+
+# 启动 Ollama 服务
+ollama serve
+```
+
+### 2. 安装 Python 依赖
+
+```bash
+# 基础依赖 (推荐开发模式安装)
+pip install -e .
+
+# 或者直接安装
+pip install .
+
+# 可选：安装 LangChain 嵌入器支持
+pip install -e ".[langchain]"
+
+# 可选：安装 Gemini 嵌入器支持
+pip install -e ".[gemini]"
+
+# 可选：安装所有可选依赖
+pip install -e ".[all]"
+
+# 开发环境 (包含测试和代码格式化工具)
+pip install -e ".[dev]"
+```
+
+### 3. 下载模型
+
+```bash
+# 嵌入模型 (推荐)
+ollama pull bge-m3
+
+# 生成模型 (根据需要选择)
+ollama pull qwen2.5:7b      # 通义千问 (推荐)
+ollama pull qwen2.5:14b     # 通义千问更大模型
+ollama pull qwen2.5:32b     # 通义千问最大模型
+```
+
+## ⚙️ 配置
+
+系统支持多种配置方式：
+
+### 环境变量配置
+
+```bash
+export OLLAMA_BASE_URL="http://localhost:11434"
+export OLLAMA_EMBEDDING_MODEL="bge-m3"
+export OLLAMA_GENERATION_MODEL="qwen2.5:7b"
+export LOG_LEVEL="INFO"
+```
+
+### 配置文件
+
+创建 `config.json`:
+
+```json
+{
+  "ollama": {
+    "base_url": "http://localhost:11434",
+    "embedding_model": "bge-m3",
+    "generation_model": "qwen2.5:7b"
+  },
+  "vector_store": {
+    "persist_directory": "./db/chroma",
+    "collection_name": "documents"
+  },
+  "logging": {
+    "level": "INFO",
+    "file_path": "logs/rag_app.log"
+  }
+}
+```
+
+## 📖 使用指南
+
+### 命令行工具
+
+```bash
+# 查看帮助
+python cli.py --help
+
+# 添加文档
+python cli.py add /path/to/documents --recursive
+
+# 查询问题
+python cli.py query "什么是机器学习？" --n-results 3
+
+# 查看统计信息
+python cli.py stats
+
+# 清空知识库
+python cli.py clear --yes
+```
+
+### Python API
+
+```python
+from rag_engine import create_rag_engine
+
+# 创建引擎
+engine = create_rag_engine()
+
+# 添加文档
+engine.add_documents(["./documents"])
+
+# 执行查询
+result = engine.query("你的问题")
+print(result["answer"])
+```
+
+## 📁 项目结构
+
+```
+realworld/
+├── config.py              # 配置管理
+├── logger.py              # 日志系统
+├── document_processor.py  # 文档处理
+├── vector_store.py        # 向量存储
+├── rag_engine.py          # RAG 引擎核心
+├── cli.py                 # 命令行接口
+├── main.py                # 主入口
+├── requirements.txt       # 依赖列表
+├── README.md             # 文档
+└── tests/
+    └── test_rag.py       # 单元测试
+```
+
+## 🔧 高级配置
+
+### 文档处理配置
+
+```python
+# 在 config.json 中自定义
+{
+  "document": {
+    "chunk_size": 1000,
+    "chunk_overlap": 200,
+    "supported_extensions": [".txt", ".md", ".pdf", ".docx"]
+  }
+}
+```
+
+### 向量搜索配置
+
+```python
+{
+  "vector_store": {
+    "similarity_threshold": 0.7,
+    "max_results": 5
+  }
+}
+```
+
+### 缓存配置
+
+```python
+{
+  "cache": {
+    "enabled": true,
+    "directory": "./cache",
+    "ttl": 3600
+  }
+}
+```
+
+## 🧪 测试
+
+运行单元测试：
+
+```bash
+python -m pytest tests/ -v
+```
+
+或直接运行：
+
+```bash
+python tests/test_rag.py
+```
+
+运行嵌入器演示：
+
+```bash
+python demo_embedders.py
+```
+
+运行 Gemini 嵌入器示例：
+
+```bash
+# 设置 API key
+export GEMINI_API_KEY='your_api_key_here'
+
+# 运行示例
+python gemini_example.py
+```
+
+## 📊 性能优化
+
+1. **模型选择**: 使用更小的模型以提高响应速度
+2. **缓存**: 启用嵌入缓存以避免重复计算
+3. **批处理**: 大量文档时使用批处理添加
+4. **索引优化**: 定期清理无用文档
+
+## 🔍 故障排除
+
+### Ollama 连接问题
+
+```bash
+# 检查 Ollama 状态
+curl http://localhost:11434/api/tags
+
+# 重启 Ollama
+ollama serve
+```
+
+### 内存不足
+
+- 使用更小的模型
+- 减少 `chunk_size`
+- 启用缓存清理
+
+### 文档处理失败
+
+- 检查文件编码 (推荐 UTF-8)
+- 验证文件格式支持
+- 查看日志文件获取详细错误
+
+## 🤝 贡献
+
+欢迎提交 Issue 和 Pull Request！
+
+## 📄 许可证
+
+MIT License
+
+## 📞 支持
+
+如有问题，请查看日志文件或提交 Issue。

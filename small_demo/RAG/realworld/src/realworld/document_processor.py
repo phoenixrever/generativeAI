@@ -11,8 +11,8 @@ from typing import List, Dict, Any, Optional, Union
 from abc import ABC, abstractmethod
 import logging
 
-from config import get_config
-import logger
+from .config import get_config
+from . import logger
 
 class Document:
     """文档类，封装文档的基本信息和内容"""

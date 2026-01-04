@@ -1,0 +1,3 @@
+[console_scripts]
+realworld-cli = realworld.cli.cli:main
+realworld-demo = realworld.cli.main:main
