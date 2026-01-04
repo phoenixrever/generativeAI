@@ -1,9 +1,0 @@
-2026-01-04 16:17:24,011 - realworld.logger - INFO - 日志系统初始化完成
-2026-01-04 16:17:24,016 - realworld.logger - INFO - 日志级别: INFO
-2026-01-04 16:17:24,016 - realworld.logger - INFO - 日志文件: D:\code\generativeAI\small_demo\RAG\realworld\src\realworld\logs\rag_app.log
-2026-01-04 21:43:35,441 - realworld.logger - INFO - 日志系统初始化完成
-2026-01-04 21:43:35,441 - realworld.logger - INFO - 日志级别: INFO
-2026-01-04 21:43:35,441 - realworld.logger - INFO - 日志文件: D:\code\generativeAI\small_demo\RAG\realworld\src\realworld\logs\rag_app.log
-2026-01-04 21:43:53,293 - realworld.logger - INFO - 日志系统初始化完成
-2026-01-04 21:43:53,293 - realworld.logger - INFO - 日志级别: INFO
-2026-01-04 21:43:53,293 - realworld.logger - INFO - 日志文件: D:\code\generativeAI\small_demo\RAG\realworld\src\realworld\logs\rag_app.log
