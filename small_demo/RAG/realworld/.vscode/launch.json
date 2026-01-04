@@ -1,0 +1,40 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug CLI --help (recommended)",
+      "type": "python",
+      "request": "launch",
+      "program": "${workspaceFolder}/src/realworld/cli/cli.py",
+      "args": ["--help"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "justMyCode": false,
+      "python": "${command:python.interpreterPath}"
+    },
+    {
+      "name": "Debug CLI --help (with env)",
+      "type": "python",
+      "request": "launch",
+      "program": "${workspaceFolder}/src/realworld/cli/cli.py",
+      "args": ["--help"],
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/src",
+        "LOG_ENABLED": "false"
+      },
+      "console": "integratedTerminal",
+      "justMyCode": false
+    },
+    {
+      "name": "Debug CLI module",
+      "type": "python",
+      "request": "launch",
+      "module": "realworld.cli.cli",
+      "args": ["--help"],
+      "cwd": "${workspaceFolder}/src",
+      "console": "integratedTerminal",
+      "justMyCode": false
+    }
+  ]
+}

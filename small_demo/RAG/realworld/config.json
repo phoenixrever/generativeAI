@@ -9,6 +9,7 @@
     "collection_name": "documents"
   },
   "logging": {
+    "enabled": true,
     "level": "INFO",
     "file_path": "logs/rag_app.log"
   }

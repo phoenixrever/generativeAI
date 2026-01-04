@@ -48,6 +48,7 @@ class DocumentConfig:
 @dataclass
 class LoggingConfig:
     """日志配置"""
+    enabled: bool = True
     level: str = "INFO"
     format: str = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     file_path: Optional[str] = BASE_DIR / "logs/rag_app.log"
@@ -99,6 +100,7 @@ class AppConfig:
         config.vector_store.persist_directory = os.getenv('VECTOR_STORE_DIR', config.vector_store.persist_directory)
 
         # 日志配置
+        config.logging.enabled = os.getenv('LOGGING_ENABLED', str(config.logging.enabled)).lower() in ('true', '1', 'yes')
         config.logging.level = os.getenv('LOG_LEVEL', config.logging.level)
 
         return config
@@ -203,9 +205,9 @@ class AppConfig:
         if not self.ollama.base_url.startswith(('http://', 'https://')):
             errors.append("Ollama base_url 必须以 http:// 或 https:// 开头")
 
-        # 检查路径
-        if not Path(self.vector_store.persist_directory).parent.exists():
-            errors.append(f"向量存储目录的父目录不存在: {self.vector_store.persist_directory}")
+        # 检查路径 不存在会创建的 目录就不检查了 
+        # if not Path(self.vector_store.persist_directory).parent.exists():
+        #     errors.append(f"向量存储目录的父目录不存在: {self.vector_store.persist_directory}")
 
         # 检查相似度阈值
         if not 0 <= self.vector_store.similarity_threshold <= 1:

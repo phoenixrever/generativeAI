@@ -12,7 +12,7 @@ from abc import ABC, abstractmethod
 import logging
 
 from .config import get_config
-from . import logger
+# from . import logger  # 注释掉，避免自动初始化日志系统
 
 class Document:
     """文档类，封装文档的基本信息和内容"""

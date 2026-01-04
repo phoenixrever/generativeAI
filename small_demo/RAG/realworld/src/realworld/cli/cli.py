@@ -8,25 +8,125 @@
 import argparse
 import sys
 import json
+import os
 from pathlib import Path
 from typing import List, Optional
 import logging
 
 from ..config import get_config, init_config
+from ..logger import initialize_logging
 from ..rag_engine import create_rag_engine, RAGEngine
-from ..logger import get_logger
+
+def create_parser() -> argparse.ArgumentParser:
+    """创建命令行参数解析器"""
+    parser = argparse.ArgumentParser(
+        description="RAG 系统命令行工具",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+使用示例:
+  # 添加文档
+  python cli.py add /path/to/documents --recursive
+
+  # 查询问题
+  python cli.py query "什么是机器学习？"
+
+  # 查看统计信息
+  python cli.py stats
+
+  # 清空数据库
+  python cli.py clear --yes
+        """,
+        add_help=False  # 禁用默认的 -h/--help 选项
+    )
+
+    # 全局选项
+    parser.add_argument(
+        '--config',
+        type=str,
+        help='配置文件路径'
+    )
+
+    parser.add_argument(
+        '--log-level',
+        choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
+        default='INFO',
+        help='日志级别 (默认: INFO)'
+    )
+
+    parser.add_argument(
+        '--no-log',
+        action='store_true',
+        help='禁用日志输出'
+    )
+
+    parser.add_argument(
+        '--help',
+        action='store_true',
+        help='显示帮助信息'
+    )
+
+    subparsers = parser.add_subparsers(dest='command', help='可用命令')
+
+    # 添加文档命令
+    add_parser = subparsers.add_parser('add', help='添加文档到知识库')
+    add_parser.add_argument(
+        'paths',
+        nargs='+',
+        help='文件或目录路径'
+    )
+    add_parser.add_argument(
+        '--no-recursive',
+        action='store_true',
+        help='不递归处理子目录'
+    )
+
+    # 查询命令
+    query_parser = subparsers.add_parser('query', help='查询知识库')
+    query_parser.add_argument(
+        'question',
+        help='查询问题'
+    )
+    query_parser.add_argument(
+        '--n-results',
+        type=int,
+        default=5,
+        help='返回结果数量 (默认: 5)'
+    )
+    query_parser.add_argument(
+        '--format',
+        choices=['text', 'json'],
+        default='text',
+        help='输出格式 (默认: text)'
+    )
+
+    # 统计信息命令
+    subparsers.add_parser('stats', help='显示系统统计信息')
+
+    # 清空数据库命令
+    clear_parser = subparsers.add_parser('clear', help='清空知识库')
+    clear_parser.add_argument(
+        '--yes',
+        action='store_true',
+        help='跳过确认提示'
+    )
+
+    return parser
 
 class RAGCLI:
     """RAG 命令行接口"""
 
     def __init__(self):
         self.engine: Optional[RAGEngine] = None
-        self.logger = logging.getLogger(__name__)
+        self.logger = logging.getLogger(__name__)  # 使用标准logging
 
     def initialize_engine(self) -> None:
         """初始化 RAG 引擎"""
         try:
             self.engine = create_rag_engine()
+            self.logger.info("RAG 引擎初始化成功")
+        except Exception as e:
+            self.logger.error(f"RAG 引擎初始化失败: {e}")
+            sys.exit(1)
             self.logger.info("RAG 引擎初始化成功")
         except Exception as e:
             self.logger.error(f"RAG 引擎初始化失败: {e}")
@@ -140,103 +240,35 @@ class RAGCLI:
             print(f"❌ 清空数据库失败: {e}")
             sys.exit(1)
 
-def create_parser() -> argparse.ArgumentParser:
-    """创建命令行参数解析器"""
-    parser = argparse.ArgumentParser(
-        description="RAG 系统命令行工具",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-使用示例:
-  # 添加文档
-  python cli.py add /path/to/documents --recursive
-
-  # 查询问题
-  python cli.py query "什么是机器学习？"
-
-  # 查看统计信息
-  python cli.py stats
-
-  # 清空数据库
-  python cli.py clear --yes
-        """
-    )
-
-    # 全局选项
-    parser.add_argument(
-        '--config',
-        type=str,
-        help='配置文件路径'
-    )
-
-    parser.add_argument(
-        '--log-level',
-        choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
-        default='INFO',
-        help='日志级别 (默认: INFO)'
-    )
-
-    subparsers = parser.add_subparsers(dest='command', help='可用命令')
-
-    # 添加文档命令
-    add_parser = subparsers.add_parser('add', help='添加文档到知识库')
-    add_parser.add_argument(
-        'paths',
-        nargs='+',
-        help='文件或目录路径'
-    )
-    add_parser.add_argument(
-        '--no-recursive',
-        action='store_true',
-        help='不递归处理子目录'
-    )
-
-    # 查询命令
-    query_parser = subparsers.add_parser('query', help='查询知识库')
-    query_parser.add_argument(
-        'question',
-        help='查询问题'
-    )
-    query_parser.add_argument(
-        '--n-results',
-        type=int,
-        default=5,
-        help='返回结果数量 (默认: 5)'
-    )
-    query_parser.add_argument(
-        '--format',
-        choices=['text', 'json'],
-        default='text',
-        help='输出格式 (默认: text)'
-    )
-
-    # 统计信息命令
-    subparsers.add_parser('stats', help='显示系统统计信息')
-
-    # 清空数据库命令
-    clear_parser = subparsers.add_parser('clear', help='清空知识库')
-    clear_parser.add_argument(
-        '--yes',
-        action='store_true',
-        help='跳过确认提示'
-    )
-
-    return parser
-
 def main():
     """主函数"""
     parser = create_parser()
     args = parser.parse_args()
-
-    if not args.command:
+    # 如果是 help 请求，先初始化日志然后显示帮助
+    if getattr(args, 'help', False):
+        try:
+            init_config(args.config if hasattr(args, 'config') and args.config else None)
+            config = get_config()
+            initialize_logging(args, config)
+        except Exception as e:
+            logging.getLogger(__name__).warning(f"配置初始化失败: {e}")
+            pass  # 如果日志初始化失败，继续执行
         parser.print_help()
-        sys.exit(1)
+        return
 
-    # 初始化配置
-    config_overrides = {}
-    if args.log_level:
-        config_overrides['logging.level'] = args.log_level
+    # 先初始化基本配置（不初始化日志）
+    try:
+        init_config(args.config if hasattr(args, 'config') and args.config else None)
+        config = get_config()
+    except Exception as e:
+        # 如果配置初始化失败，使用基本日志
+        import logging
+        logging.basicConfig(level=logging.INFO)
+        logging.getLogger(__name__).warning(f"配置初始化失败: {e}")
+        config = None
 
-    init_config(args.config, **config_overrides)
+    # 初始化日志
+    initialize_logging(args, config)
 
     # 初始化 CLI
     cli = RAGCLI()
@@ -264,7 +296,7 @@ def main():
         print("\n⚠️  操作被用户中断")
         sys.exit(1)
     except Exception as e:
-        get_logger(__name__).error(f"未预期的错误: {e}")
+        logging.getLogger(__name__).error(f"未预期的错误: {e}")
         print(f"❌ 发生未预期的错误: {e}")
         sys.exit(1)
 

@@ -17,7 +17,7 @@ from chromadb.config import Settings
 
 from .config import get_config
 from .document_processor import Document
-from . import logger
+# from . import logger  # 注释掉，避免自动初始化日志系统
 
 class VectorStore:
     """向量存储管理器"""

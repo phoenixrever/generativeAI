@@ -15,7 +15,6 @@ from .config import get_config
 from .document_processor import Document, DocumentLoader, TextSplitter, create_document_loader, create_text_splitter
 from .vector_store import VectorStore, EmbeddingCache, create_vector_store, create_embedding_cache
 from .embedders import Embedder, create_embedder
-from logger import get_logger
 
 class OllamaClient:
     """Ollama API 客户端"""
@@ -36,7 +35,7 @@ class OllamaClient:
         """
         self.base_url = base_url.rstrip('/')
         self.timeout = timeout
-        self.logger = get_logger(__name__)  # __name__ 用于获取当前模块的名称
+        self.logger = logging.getLogger(__name__)  # __name__ 用于获取当前模块的名称
 
         # 初始化嵌入器
         if embedder is None:
@@ -148,7 +147,7 @@ class RAGEngine:
             embedder_kwargs: 嵌入器初始化参数
         """
         self.config = get_config()
-        self.logger = get_logger(__name__)
+        self.logger = logging.getLogger(__name__)
 
         # 初始化组件
         if ollama_client is None:

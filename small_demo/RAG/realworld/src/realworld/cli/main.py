@@ -18,6 +18,7 @@ from pathlib import Path
 
 from ..config import init_config
 from ..rag_engine import create_rag_engine
+# from ..logger import init_app_logging  # 日志系统现在由CLI统一管理
 
 def main():
     """主函数 - 演示 RAG 系统的基本用法"""
@@ -25,6 +26,8 @@ def main():
 
     # 初始化配置
     init_config()
+
+    # 日志系统现在由CLI统一管理，无需单独初始化
 
     # 创建 RAG 引擎
     engine = create_rag_engine()

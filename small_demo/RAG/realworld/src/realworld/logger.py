@@ -113,6 +113,16 @@ def init_app_logging() -> None:
     """初始化应用程序日志系统，使用配置中的设置"""
     config = get_config()
 
+    # 检查是否启用日志
+    if not config.logging.enabled:
+        # 如果不启用日志，设置一个空的日志处理器
+        logger = logging.getLogger()
+        logger.setLevel(logging.CRITICAL)  # 只记录严重错误
+        # 清除所有处理器
+        for handler in logger.handlers[:]:
+            logger.removeHandler(handler)
+        return
+
     # 检查是否在终端环境中运行（决定是否启用颜色）
     enable_colors = sys.stdout.isatty() and sys.stderr.isatty()
 
@@ -153,5 +163,42 @@ def log_error_with_context(error: Exception, context: Optional[dict] = None) -> 
         logger.error(f"错误上下文: {context}")
     logger.error(f"错误类型: {type(error).__name__}")
 
-# 初始化日志系统
-init_app_logging()
+def disable_logging() -> None:
+    """禁用日志系统"""
+    config = get_config()
+    config.logging.enabled = False
+    init_app_logging()
+
+def initialize_logging(args, config) -> None:
+    """
+    初始化日志系统
+
+    参数:
+        args: 命令行参数
+        config: 配置对象
+    """
+    # 检查日志是否启用（从配置或命令行参数）
+    logging_enabled = True  # 默认启用
+
+    if config and hasattr(config, 'logging') and hasattr(config.logging, 'enabled'):
+        logging_enabled = config.logging.enabled
+
+    # 命令行参数覆盖
+    if hasattr(args, 'no_log') and args.no_log:
+        logging_enabled = False
+
+    # 根据开关决定是否初始化日志
+    if logging_enabled:
+        try:
+            init_app_logging()
+        except Exception as e:
+            # 如果日志初始化失败，至少要有基本的日志
+            import logging
+            logging.basicConfig(level=logging.INFO)
+            logging.getLogger(__name__).warning(f"日志系统初始化失败: {e}")
+    else:
+        # 禁用日志
+        try:
+            disable_logging()
+        except Exception as e:
+            pass  # 如果禁用失败，继续执行

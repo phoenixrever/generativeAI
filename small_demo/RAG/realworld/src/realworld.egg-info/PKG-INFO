@@ -30,7 +30,7 @@ Requires-Dist: retry>=0.9.0
 Provides-Extra: langchain
 Requires-Dist: langchain-ollama>=0.1.0; extra == "langchain"
 Provides-Extra: gemini
-Requires-Dist: google-generativeai>=0.3.0; extra == "gemini"
+Requires-Dist: google-genai>=0.1.0; extra == "gemini"
 Provides-Extra: dev
 Requires-Dist: pytest>=7.0.0; extra == "dev"
 Requires-Dist: pytest-cov>=4.0.0; extra == "dev"
@@ -61,39 +61,43 @@ Requires-Dist: realworld[dev,gemini,langchain]; extra == "all"
 
 ```
 realworld/
-├── src/                    # 核心模块
-│   ├── __init__.py
-│   ├── rag_engine.py      # RAG 引擎核心
-│   ├── embedders.py       # 嵌入器接口和实现
-│   ├── vector_store.py    # 向量存储管理
-│   ├── document_processor.py  # 文档处理
-│   ├── config.py          # 配置管理
-│   └── logger.py          # 日志配置
-├── cli/                   # 命令行接口
-│   ├── __init__.py
-│   ├── cli.py            # CLI 实现
-│   └── main.py           # 主入口
-├── data/                  # 数据存储
+├── __init__.py           # 根包初始化（版本定义）
+├── config.json           # 配置文件
+├── pyproject.toml        # 项目配置和依赖管理 (PEP 621)
+├── requirements.txt      # 传统依赖文件 (向后兼容)
+├── src/                  # 源码目录
+│   └── realworld/        # 主包
+│       ├── __init__.py   # 包导出
+│       ├── rag_engine.py # RAG 引擎核心
+│       ├── embedders.py  # 嵌入器接口和实现
+│       ├── vector_store.py # 向量存储管理
+│       ├── document_processor.py # 文档处理
+│       ├── config.py     # 配置管理
+│       ├── logger.py     # 日志配置
+│       ├── cli/          # 命令行接口子包
+│       │   ├── __init__.py
+│       │   ├── cli.py    # CLI 实现
+│       │   └── main.py   # 主入口演示
+│       ├── cache/        # 缓存文件目录
+│       └── logs/         # 日志文件目录
+├── data/                 # 数据存储
 │   ├── __init__.py
 │   ├── documents/        # 示例文档
 │   └── db/               # 向量数据库
+├── docs/                 # 文档
+│   ├── __init__.py
+│   ├── README.md         # 项目文档
+│   ├── config相关解读.md # 配置说明
+│   └── 工程结构.md      # 工程结构说明
 ├── examples/             # 示例脚本
 │   ├── __init__.py
 │   ├── demo_embedders.py         # 嵌入器演示
 │   ├── demo_embedding_modes.py   # 嵌入模式演示
 │   └── gemini_example.py         # Gemini 使用示例
-├── docs/                 # 文档
-│   ├── __init__.py
-│   ├── README.md         # 项目文档
-│   └── config相关解读.md  # 配置说明
 ├── tests/                # 测试
 │   └── test_rag.py       # 单元测试
-├── config.json           # 配置文件
 ├── logs/                 # 日志文件
-├── cache/                # 缓存文件
-├── pyproject.toml        # 项目配置和依赖管理 (PEP 621)
-├── requirements.txt      # 传统依赖文件 (向后兼容)
-└── __init__.py          # 包初始化
+└── cache/                # 缓存文件
 ```
 
 ## 🧠 嵌入器架构
@@ -164,7 +168,7 @@ engine = RAGEngine(
 - **langchain-ollama**: LangChain Ollama 集成 (安装 `pip install -e .[langchain]`)
 - **google-generativeai**: Google Gemini API 集成 (安装 `pip install -e .[gemini]`)
 
-## �📋 系统要求
+## �� 系统要求
 
 - Python 3.8+
 - Ollama (已安装并运行)
@@ -255,21 +259,23 @@ export LOG_LEVEL="INFO"
 
 ### 命令行工具
 
+安装项目后，可以使用以下命令：
+
 ```bash
 # 查看帮助
-python cli.py --help
+realworld-cli --help
 
 # 添加文档
-python cli.py add /path/to/documents --recursive
+realworld-cli add /path/to/documents --recursive
 
 # 查询问题
-python cli.py query "什么是机器学习？" --n-results 3
+realworld-cli query "什么是机器学习？" --n-results 3
 
 # 查看统计信息
-python cli.py stats
+realworld-cli stats
 
 # 清空知识库
-python cli.py clear --yes
+realworld-cli clear --yes
 ```
 
 ### Python API
@@ -286,23 +292,6 @@ engine.add_documents(["./documents"])
 # 执行查询
 result = engine.query("你的问题")
 print(result["answer"])
-```
-
-## 📁 项目结构
-
-```
-realworld/
-├── config.py              # 配置管理
-├── logger.py              # 日志系统
-├── document_processor.py  # 文档处理
-├── vector_store.py        # 向量存储
-├── rag_engine.py          # RAG 引擎核心
-├── cli.py                 # 命令行接口
-├── main.py                # 主入口
-├── requirements.txt       # 依赖列表
-├── README.md             # 文档
-└── tests/
-    └── test_rag.py       # 单元测试
 ```
 
 ## 🔧 高级配置

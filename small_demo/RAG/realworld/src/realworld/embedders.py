@@ -4,12 +4,16 @@
 这个模块定义了统一的嵌入器接口，以及不同嵌入方式的具体实现：
 - OllamaDirectEmbedder: 直接调用 Ollama API
 - OllamaLangchainEmbedder: 使用 LangChain OllamaEmbeddings
-- OnlineModelEmbedder: 线上大模型 (待实现)
+- OnlineModelEmbedder: 线上大模型 (使用 Google Gemini)
+
+注意：本模块使用 Python 标准 logging 模块记录日志。
+日志配置通过项目根目录的 logger.py 模块进行全局设置，
+所有 logger 实例都会继承根 logger 的配置（包括输出格式、级别、文件输出等）。
 """
 
 from abc import ABC, abstractmethod
 from typing import List, Optional
-import logging
+import logging  # 导入标准 logging 模块，用于记录日志
 import requests
 from retry import retry
 
@@ -19,15 +23,21 @@ try:
 except ImportError:
     LANGCHAIN_AVAILABLE = False
 
+# pip install -e ".[gemini]"
 try:
-    import google.generativeai as genai
+    from google import genai  # Google 在 2024 年底/2025 年初刚推出的全新统一 SDK（被称为 Multimodal Live API 时代的产品）。老的是 google-generativeai
     GOOGLE_GENAI_AVAILABLE = True
 except ImportError:
     GOOGLE_GENAI_AVAILABLE = False
 
-
+# ABC 是 Abstract Base Class（抽象基类）的缩写。它是 Python abc 模块提供的一个工具，用来定义“规范”或“模板”。
+# 抽象基类不能直接实例化，必须由子类实现所有抽象方法。
 class Embedder(ABC):
-    """嵌入器抽象基类"""
+    """嵌入器抽象基类
+
+    定义了嵌入器的统一接口，所有嵌入器实现都必须继承此类并实现其抽象方法。
+    这样可以保证不同嵌入器实现的一致性和可替换性。
+    """
 
     @abstractmethod
     def generate_embedding(self, text: str) -> List[float]:
@@ -76,7 +86,7 @@ class OllamaDirectEmbedder(Embedder):
         self.base_url = base_url.rstrip('/')
         self.timeout = timeout
         self.model = model
-        self.logger = logging.getLogger(__name__)
+        self.logger = logging.getLogger(__name__)  # 创建模块级别的logger，用于记录该类的操作日志
 
     @retry(exceptions=(requests.RequestException, ConnectionError), tries=3, delay=1, backoff=2)
     def generate_embedding(self, text: str) -> List[float]:
@@ -139,7 +149,7 @@ class OllamaLangchainEmbedder(Embedder):
         """
         self.base_url = base_url.rstrip('/')
         self.model = model
-        self.logger = logging.getLogger(__name__)
+        self.logger = logging.getLogger(__name__)  # 创建模块级别的logger，用于记录该类的操作日志
 
         # 初始化 LangChain 嵌入器
         self.langchain_embedder = None
@@ -211,11 +221,11 @@ class OnlineModelEmbedder(Embedder):
         self.api_key = api_key
         self.model = model
         self.base_url = base_url
-        self.logger = logging.getLogger(__name__)
+        self.logger = logging.getLogger(__name__)  # 创建模块级别的logger，用于记录该类的操作日志
 
         # 初始化 Gemini API
         try:
-            genai.configure(api_key=self.api_key)
+            genai.Client(api_key=self.api_key)
             self.logger.info(f"Gemini 嵌入器初始化成功，使用模型: {self.model}")
         except Exception as e:
             self.logger.error(f"Gemini API 初始化失败: {e}")
@@ -225,7 +235,7 @@ class OnlineModelEmbedder(Embedder):
         """生成单个文本的嵌入向量"""
         try:
             self.logger.debug(f"使用 Gemini 生成嵌入向量")
-            result = genai.embed_content(
+            result = genai.models.embed(
                 model=self.model,
                 content=text,
                 task_type="retrieval_document"
@@ -245,7 +255,7 @@ class OnlineModelEmbedder(Embedder):
             self.logger.debug(f"使用 Gemini 批量生成嵌入向量，数量: {len(texts)}")
 
             # Gemini API 支持批量嵌入
-            result = genai.embed_content(
+            result = genai.models.embed(
                 model=self.model,
                 content=texts,
                 task_type="retrieval_document"
@@ -263,7 +273,7 @@ class OnlineModelEmbedder(Embedder):
         """检查 Gemini API 健康状态"""
         try:
             # 尝试生成一个简单的嵌入来测试连接
-            test_result = genai.embed_content(
+            test_result = genai.models.embed(
                 model=self.model,
                 content="test",
                 task_type="retrieval_document"
