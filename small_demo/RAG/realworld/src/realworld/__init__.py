@@ -7,7 +7,6 @@ from .embedders import Embedder, create_embedder
 from .vector_store import VectorStore, create_vector_store
 from .document_processor import DocumentLoader, create_document_loader
 from .config import get_config, init_config
-# from .logger import setup_logging  # 注释掉，避免自动初始化日志系统 如果想模型初始化可以在这写
 
 __all__ = [
     'RAGEngine', 'create_rag_engine', 'OllamaClient',
@@ -15,5 +14,4 @@ __all__ = [
     'VectorStore', 'create_vector_store',
     'DocumentLoader', 'create_document_loader',
     'get_config', 'init_config',
-    'setup_logging'
 ]

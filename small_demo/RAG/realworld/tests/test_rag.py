@@ -10,10 +10,10 @@ import tempfile
 from pathlib import Path
 import json
 
-from realworld.src.config import AppConfig, get_config
-from realworld.src.document_processor import Document, TextDocumentProcessor, TextSplitter
-from realworld.src.vector_store import VectorStore
-from realworld.src.rag_engine import OllamaClient, RAGEngine
+from realworld.config import AppConfig, get_config
+from realworld.document_processor import Document, TextDocumentProcessor, TextSplitter
+from realworld.vector_store import VectorStore
+from realworld.rag_engine import OllamaClient, RAGEngine
 
 class TestConfig(unittest.TestCase):
     """配置模块测试"""

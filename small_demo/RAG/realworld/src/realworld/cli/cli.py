@@ -47,16 +47,27 @@ def create_parser() -> argparse.ArgumentParser:
     )
 
     parser.add_argument(
-        '--log-level',
-        choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
-        default='INFO',
-        help='日志级别 (默认: INFO)'
+        '--verbose', '-v',
+        action='store_true',
+        help='详细输出（DEBUG 级别）'
+    )
+
+    parser.add_argument(
+        '--quiet', '-q',
+        action='store_true',
+        help='安静模式（禁用日志输出）'
     )
 
     parser.add_argument(
         '--no-log',
         action='store_true',
-        help='禁用日志输出'
+        help='禁用日志输出（同 --quiet）'
+    )
+
+    parser.add_argument(
+        '--no-file',
+        action='store_true',
+        help='仅输出到控制台，不保存日志文件'
     )
 
     parser.add_argument(
@@ -244,31 +255,26 @@ def main():
     """主函数"""
     parser = create_parser()
     args = parser.parse_args()
-    # 如果是 help 请求，先初始化日志然后显示帮助
+
+    # 如果是 help 请求，显示帮助
     if getattr(args, 'help', False):
         try:
-            init_config(args.config if hasattr(args, 'config') and args.config else None)
-            config = get_config()
-            initialize_logging(args, config)
-        except Exception as e:
-            logging.getLogger(__name__).warning(f"配置初始化失败: {e}")
-            pass  # 如果日志初始化失败，继续执行
+            init_config(getattr(args, 'config', None))
+            initialize_logging(args, get_config())
+        except:
+            pass
         parser.print_help()
         return
 
-    # 先初始化基本配置（不初始化日志）
+    # 初始化配置
     try:
-        init_config(args.config if hasattr(args, 'config') and args.config else None)
-        config = get_config()
+        init_config(getattr(args, 'config', None))
     except Exception as e:
-        # 如果配置初始化失败，使用基本日志
-        import logging
         logging.basicConfig(level=logging.INFO)
         logging.getLogger(__name__).warning(f"配置初始化失败: {e}")
-        config = None
 
-    # 初始化日志
-    initialize_logging(args, config)
+    # 初始化日志（一行搞定）
+    initialize_logging(args, get_config())
 
     # 初始化 CLI
     cli = RAGCLI()

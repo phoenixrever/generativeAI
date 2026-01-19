@@ -1,21 +1,34 @@
+# Even Better TOML 插件语法高亮支持
 [build-system]
-requires = ["setuptools>=61.0", "wheel"]
+# 构建项目所需的工具
+requires = ["setuptools>=61.0", "wheel"] 
+# 指定使用 setuptools 作为后端来执行构建过程
 build-backend = "setuptools.build_meta"
 
 [project]
+# 项目的名称，安装时显示的包名
 name = "realworld"
+# 项目版本号
 version = "1.0.0"
+# 项目的简短描述
 description = "一个完整的检索增强生成系统，支持多种嵌入方式和向量存储"
+# 指定说明文档的位置
 readme = "docs/README.md"
+# 指定开源许可证类型
 license = {text = "MIT"}
+# 限制 Python 的最低版本要求
 requires-python = ">=3.8"
+# 作者信息（列表形式，可写多个）
 authors = [
     {name = "phoenixrever", email = "phoenixrever@example.com"},
 ]
+# 维护者信息
 maintainers = [
     {name = "phoenixrever", email = "phoenixrever@example.com"},
 ]
+# 关键词，方便在 PyPI 官网上被搜索到
 keywords = ["RAG", "AI", "embeddings", "vector-search", "ollama"]
+# 分类器，提供项目的成熟度、目标受众、许可证等标准化信息
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
@@ -29,57 +42,71 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
+# 核心依赖库：运行程序必须安装的包
 dependencies = [
-    "chromadb>=0.4.0",
-    "requests>=2.25.0",
-    "PyPDF2>=3.0.0",
-    "python-docx>=0.8.0",
-    "retry>=0.9.0",
+    "chromadb>=0.4.0",  # 向量数据库
+    "requests>=2.25.0", # 网络请求
+    "PyPDF2>=3.0.0",    # PDF 解析
+    "python-docx>=0.8.0", # Word 文档解析
+    "retry>=0.9.0",     # 错误重试机制
 ]
 
 [project.optional-dependencies]
+# 可选依赖：只有使用 langchain 功能时才需要安装
 langchain = [
     "langchain-ollama>=0.1.0",
 ]
+# 可选依赖：只有使用 Google Gemini 时才需要安装
 gemini = [
     "google-genai>=0.1.0",
 ]
+# 开发环境依赖：仅在开发、测试、格式化代码时使用
 dev = [
-    "pytest>=7.0.0",
-    "pytest-cov>=4.0.0",
-    "black>=23.0.0",
-    "isort>=5.12.0",
-    "flake8>=6.0.0",
-    "mypy>=1.0.0",
+    "pytest>=7.0.0",    # 测试框架
+    "pytest-cov>=4.0.0",# 测试覆盖率工具
+    "black>=23.0.0",     # 代码格式化
+    "isort>=5.12.0",     # import 排序
+    "flake8>=6.0.0",     # 代码规范检查
+    "mypy>=1.0.0",       # 静态类型检查
 ]
+# 快捷安装方式：安装本项目的所有功能和开发工具
 all = [
     "realworld[langchain,gemini,dev]",
 ]
 
 [project.urls]
+# 项目主页、源码仓库和问题反馈地址
 Homepage = "https://github.com/phoenixrever/generativeAI"
 Repository = "https://github.com/phoenixrever/generativeAI"
 Issues = "https://github.com/phoenixrever/generativeAI/issues"
 
 [project.scripts]
+# 注册终端命令：输入 realworld-cli 会运行 realworld.cli.cli 模块里的 main 函数
 realworld-cli = "realworld.cli.cli:main"
+# 注册终端命令：输入 realworld-demo 会运行示例入口
 realworld-demo = "realworld.cli.main:main"
 
 [tool.setuptools.packages.find]
+# 告诉打包工具：去 src 目录下找源代码包
 where = ["src"]
+# 包含 src 下的所有包
 include = ["*"]
 
 [tool.setuptools.package-dir]
+# 将根目录下的包映射到 src 目录
+# 左边的 ""：代表你的根命名空间（即你将来 import 时的起始位置）。 右边的 "src"：代表实际物理路径。
+# 当别人在代码里写 import realworld 时，请去物理文件夹 src/realworld 里面找，而不是在根目录找
+# 简单来说就是去掉src，让代码结构更清晰
 "" = "src"
 
 [tool.black]
-line-length = 88
-target-version = ['py38', 'py39', 'py310', 'py311', 'py312']
-include = '\.pyi?$'
-extend-exclude = '''
+# Black 代码格式化配置
+line-length = 88 # 每行最大长度
+target-version = ['py38', 'py39', 'py310', 'py311', 'py312'] # 支持的 Python 版本
+include = '\.pyi?$' # 处理 .py 和 .pyi 文件
+extend-exclude = ''' # 排除不需要格式化的目录（如虚拟环境、Git 记录等）
 /(
-  # directories
-  \.eggs
+    \.eggs
   | \.git
   | \.hg
   | \.mypy_cache
@@ -91,32 +118,35 @@ extend-exclude = '''
 '''
 
 [tool.isort]
-profile = "black"
-multi_line_output = 3
-line_length = 88
-known_first_party = ["realworld"]
-known_third_party = ["chromadb", "requests", "langchain", "google"]
+# isort 导入排序配置
+profile = "black" # 使用与 Black 兼容的配置
+multi_line_output = 3 # 多行导入的显示风格
+line_length = 88 # 每行长度对齐 Black
+known_first_party = ["realworld"] # 标记自己的包为“一等公民”
+known_third_party = ["chromadb", "requests", "langchain", "google"] # 标记常见的第三方库
 
 [tool.mypy]
-python_version = "3.8"
-warn_return_any = true
-warn_unused_configs = true
-disallow_untyped_defs = true
-disallow_incomplete_defs = true
-check_untyped_defs = true
-disallow_untyped_decorators = true
-no_implicit_optional = true
-warn_redundant_casts = true
-warn_unused_ignores = true
-warn_no_return = true
-warn_unreachable = true
-strict_equality = true
-show_error_codes = true
+# mypy 静态类型检查配置
+python_version = "3.8" # 检查时参考的 Python 版本
+warn_return_any = true # 如果函数返回 Any 类型则报警
+warn_unused_configs = true # 警示未使用的配置
+disallow_untyped_defs = true # 禁止定义没有类型注解的函数
+disallow_incomplete_defs = true # 禁止参数不全的类型注解
+check_untyped_defs = true # 检查没有注解的函数体内部
+disallow_untyped_decorators = true # 禁止使用没有注解的装饰器
+no_implicit_optional = true # 禁止隐式的 Optional 类型
+warn_redundant_casts = true # 警示多余的强制类型转换
+warn_unused_ignores = true # 警示多余的 # type: ignore
+warn_no_return = true # 如果函数有返回值但没写 return 则报警
+warn_unreachable = true # 警示永远执行不到的代码
+strict_equality = true # 强制严格的相等比较
+show_error_codes = true # 显示具体的错误代码，方便搜索
 
 [[tool.mypy.overrides]]
+# 特殊处理：针对这些第三方库，如果它们没写类型声明，则忽略它们
 module = [
     "chromadb.*",
     "langchain_ollama.*",
     "google.generativeai.*",
 ]
-ignore_missing_imports = true
+ignore_missing_imports = true # 忽略找不到类型库的警告

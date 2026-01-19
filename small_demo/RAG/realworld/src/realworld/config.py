@@ -7,7 +7,7 @@
 
 import os
 from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 from dataclasses import dataclass, field
 import json
 
@@ -40,7 +40,7 @@ class DocumentConfig:
     # default_factory 的意思是“默认工厂”。当你创建一个新的对象时，dataclass 就会调用一次这个函数，为你生成一个新的列表。
     # lambda: ['.txt', '.md', ...] 相当于定义了一个小函数，它的唯一任务就是“返回这个列表”。
     # lambda 的标准格式是： lambda 参数: 返回值
-    supported_extensions: list[str] = field(default_factory=lambda: ['.txt', '.md', '.pdf', '.docx'])
+    supported_extensions: List[str] = field(default_factory=lambda: ['.txt', '.md', '.pdf', '.docx'])
     chunk_size: int = 1000  # 文本块大小
     chunk_overlap: int = 200  # 块重叠大小
     encoding: str = 'utf-8'  # 文件编码
