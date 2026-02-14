@@ -11,8 +11,12 @@ from typing import Dict, Any, Optional, List
 from dataclasses import dataclass, field
 import json
 
-# 获取当前文件所在的目录 要让 / 生效，BASE_DIR 必须先是一个 Path 对象：
-BASE_DIR = Path(__file__).resolve().parent
+# 获取当前文件所在的目录
+# src/realworld/config.py -> src/realworld
+CURRENT_DIR = Path(__file__).resolve().parent
+
+# 项目根目录 -> realworld/
+BASE_DIR = CURRENT_DIR.parent.parent
 
 
 @dataclass
@@ -28,7 +32,7 @@ class OllamaConfig:
 @dataclass
 class VectorStoreConfig:
     """向量数据库配置"""
-    persist_directory: str = BASE_DIR / "db/chroma"
+    persist_directory: str = BASE_DIR / "data/db/chroma"
     collection_name: str = "documents"
     # A. 过滤“幻觉”的源头如果你不设阈值，向量数据库永远会返回最接近的 $K$ 个结果。如果没有阈值，LLM 就会一本正经地胡说八道。
     # B. 节省 Token 和性能 通过阈值过滤掉低质量的数据，可以减少传给大模型的上下文长度，既省钱又提高生成速度。
