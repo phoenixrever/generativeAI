@@ -71,6 +71,8 @@ class AppConfig:
     """应用程序总配置"""
     # 当你创建一个全新的 AppConfig 时，请顺便帮我把 OllamaConfig 也实例化（New）一个出来，塞进这个变量里。”
     # 这样你只需要执行 cfg = AppConfig()，它内部的所有子配置就都自动按照默认值准备好了。
+    # field(default_factory=...) 的作用是：在创建 AppConfig 实例时，自动调用 OllamaConfig() 并将结果赋值给 ollama 属性。
+    # AppConfig类里有一个叫 ollama 的属性。如果你在初始化 AppConfig时没传这个参数，请帮我运行一下 OllamaConfig()，产生一个新的默认配置实例塞进去。
     ollama: OllamaConfig = field(default_factory=OllamaConfig)
     vector_store: VectorStoreConfig = field(default_factory=VectorStoreConfig)
     document: DocumentConfig = field(default_factory=DocumentConfig)
